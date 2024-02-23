@@ -7,7 +7,7 @@
 #include <linux/uaccess.h>
 #define BUFSIZE  100
 
-
+ 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Liran B.H");
 
