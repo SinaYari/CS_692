@@ -12,13 +12,7 @@
 #include "../include/linux/vmalloc.h"
 #include "../include/linux/stat.h"
 #include <linux/syscalls.h>
-/*
-#include <include/linux/string.h>
-#include <include/linux/vmalloc.h>
-#include <include/linux/fcntl.h>
-#include <include/linux/types.h>
-#include <include/linux/stat.h>
-#include <include/linux/err.h>*/
+
 
 
 asmlinkage long sys_mycounter_2(unsigned long *ct) {
