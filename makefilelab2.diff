@@ -1,0 +1,22 @@
+iff --git a/Makefile b/../linux-4.4.1_old/Makefile
+old mode 100644
+new mode 100755
+index f47a8b4..c6a265b
+--- a/Makefile
++++ b/../linux-4.4.1_old/Makefile
+@@ -1,7 +1,7 @@
+ VERSION = 4
+ PATCHLEVEL = 4
+ SUBLEVEL = 1
+-EXTRAVERSION = lab2v2
++EXTRAVERSION =
+ NAME = Blurry Fish Butt
+ 
+ # *DOCUMENTATION*
+@@ -879,7 +879,7 @@ export mod_sign_cmd
+ 
+ 
+ ifeq ($(KBUILD_EXTMOD),)
+-core-y         += kernel/ certs/ mm/ fs/ ipc/ security/ crypto/ block/ mycounter_1/ mycounter_2/
++core-y         += kernel/ certs/ mm/ fs/ ipc/ security/ crypto/ block/
+

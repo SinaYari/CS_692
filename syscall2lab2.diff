@@ -1,0 +1,15 @@
+old mode 100644
+new mode 100755
+index bb12cc5..c2b66a2
+--- a/include/linux/syscalls.h
++++ b/../linux-4.4.1_old/include/linux/syscalls.h
+@@ -889,8 +889,4 @@ asmlinkage long sys_membarrier(int cmd, int flags);
+ 
+ asmlinkage long sys_mlock2(unsigned long start, size_t len, int flags);
+ 
+-asmlinkage long sys_mycounter_1(unsigned long *ct);
+-
+-asmlinkage long sys_mycounter_2(unsigned long *ct);
+-
+ #endif
+
