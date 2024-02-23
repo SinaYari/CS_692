@@ -18,8 +18,8 @@ asmlinkage long sys_mycounter_1(unsigned long *ct){
 		printk("temp2 is: %ld\n", temp2);
 		printk("Did not copied from!\n");
 	}
-	
-	//printk("Hello world from mycounter1\n");
+	 
+	////printk("Hello world from mycounter1\n");
 	unsigned long temp3 = copy_to_user(ct, &temp, sizeof(unsigned long));	
 	if (temp3 == 0){
 	printk("Hello world from mycounter1 copy to user\n");
