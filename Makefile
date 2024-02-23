@@ -1,4 +1,4 @@
-
+#
 obj-m	:= simproc.o
 
 #KERNELDIR ?= ~/armsystem/kernel/linux-4.9.30/
