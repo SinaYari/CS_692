@@ -1,0 +1,147 @@
+diff --git a/home/osboxes/Desktop/core_new.txt b/home/osboxes/linux-4.4.1/kernel/sched/core.c
+index d466202..732e993 100644
+--- a/home/osboxes/Desktop/me (copy).txt	
++++ b/home/osboxes/linux-4.4.1/kernel/sched/core.c
+@@ -90,9 +90,6 @@
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/sched.h>
+ 
+-/* FSSP */
+-int fssp_profile, fssp_num_users, fssp_ts_per_user;
+-
+ DEFINE_MUTEX(sched_domains_mutex);
+ DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
+ 
+@@ -4035,7 +4032,7 @@ static int _sched_setscheduler(struct task_struct *p, int policy,
+ 	};
+ 
+ 	/* Fixup the legacy SCHED_RESET_ON_FORK hack. */
+-	if ((policy != SETPARAM_POLICY) && (policy & SCHED_RESET_ON_FORK)&& policy != SCHED_FSSP) {
++	if ((policy != SETPARAM_POLICY) && (policy & SCHED_RESET_ON_FORK)) {
+ 		attr.sched_flags |= SCHED_FLAG_RESET_ON_FORK;
+ 		policy &= ~SCHED_RESET_ON_FORK;
+ 		attr.sched_policy = policy;
+@@ -4194,7 +4191,7 @@ SYSCALL_DEFINE3(sched_setscheduler, pid_t, pid, int, policy,
+ 	if (policy < 0)
+ 		return -EINVAL;
+ 
+-	//return do_sched_setscheduler(pid, policy, param);
++	return do_sched_setscheduler(pid, policy, param);
+ }
+ 
+ /**
+@@ -4206,7 +4203,7 @@ SYSCALL_DEFINE3(sched_setscheduler, pid_t, pid, int, policy,
+  */
+ SYSCALL_DEFINE2(sched_setparam, pid_t, pid, struct sched_param __user *, param)
+ {
+-	//return do_sched_setscheduler(pid, SETPARAM_POLICY, param);
++	return do_sched_setscheduler(pid, SETPARAM_POLICY, param);
+ }
+ 
+ /**
+@@ -4812,7 +4809,6 @@ SYSCALL_DEFINE1(sched_get_priority_max, int, policy)
+ 	case SCHED_RR:
+ 		ret = MAX_USER_RT_PRIO-1;
+ 		break;
+-	case SCHED_FSSP:
+ 	case SCHED_DEADLINE:
+ 	case SCHED_NORMAL:
+ 	case SCHED_BATCH:
+@@ -4840,7 +4836,6 @@ SYSCALL_DEFINE1(sched_get_priority_min, int, policy)
+ 	case SCHED_RR:
+ 		ret = 1;
+ 		break;
+-	case SCHED_FSSP:
+ 	case SCHED_DEADLINE:
+ 	case SCHED_NORMAL:
+ 	case SCHED_BATCH:
+@@ -6652,12 +6647,7 @@ static void sched_init_numa(void)
+ 	struct sched_domain_topology_level *tl;
+ 	int level = 0;
+ 	int i, j, k;
+-	
+-	/* Initialize FSSP */
+-	fssp_profile = 0;
+-	fssp_num_users = 0;
+-        fssp_ts_per_user = 0;
+-	
++
+ 	sched_domains_numa_distance = kzalloc(sizeof(int) * nr_node_ids, GFP_KERNEL);
+ 	if (!sched_domains_numa_distance)
+ 		return;
+@@ -8620,75 +8610,3 @@ void dump_cpu_task(int cpu)
+ 	pr_info("Task dump for CPU %d:\n", cpu);
+ 	sched_show_task(cpu_curr(cpu));
+ }
+-
+-
+-/***** FSSP *****/
+-#define MIN_TIMESLICE		max(5 * HZ / 1000, 1)
+-void fssp_calc_ts_per_user(void) {
+-  if (fssp_num_users == 0) {
+-    /* Just in case, don't let this divide by zero! */
+-    fssp_ts_per_user = RR_TIMESLICE;
+-  } else {
+-    /* Calculate TS per user, bounding above and below by MIN/DEF TS */
+-    fssp_ts_per_user = RR_TIMESLICE / fssp_num_users > MIN_TIMESLICE ?
+-                       RR_TIMESLICE / fssp_num_users :
+-                       MIN_TIMESLICE;
+-  }
+-}
+-
+-
+-asmlinkage long sys_toggle_fssp(long pid, int status) {
+-  struct task_struct *t = pid_task(find_vpid(pid), PIDTYPE_PID);//get_pid_task(pid,PIDTYPE_PID);
+-  struct sched_param s;
+-  s.sched_priority = MIN_RT_PRIO;
+-
+-  if (status) {
+-    if (fssp_profile)
+-      printk(KERN_INFO "New FSSP process found %d!\n", t->pid);
+-
+-    /* If no processes for user yet, increase user count */
+-    if (atomic_read(&t->cred->user->fssp_processes) == 0) { //task_struct->cred->uid
+-      fssp_num_users++;
+-      if (fssp_profile)
+-        printk(KERN_INFO "New user %d!\n", t->cred->uid);
+-    }
+-
+-    /* Increase process count for user and set TS to fssp */
+-    atomic_inc(&t->cred->user->fssp_processes);
+-    t->is_fssp = 1;
+-
+-    /* Recalculate timeslice per user and set the sceduler */
+-    fssp_calc_ts_per_user();
+-    sched_setscheduler(pid, SCHED_FSSP, &s);
+-  } else {
+-    if (fssp_profile)
+-      printk(KERN_INFO "FSSP process %d quitting!\n", t->pid);
+-
+-    /* Decrease process count for user and set TS to NOT FSSP */
+-    atomic_dec(&t->cred->user->fssp_processes);
+-    t->is_fssp = 0;
+-
+-    /* If no processes for user anymore, decrease user count */
+-    if (atomic_read(&t->cred->user->fssp_processes) == 0) {
+-      fssp_num_users--;
+-      if (fssp_profile)
+-        printk(KERN_INFO "User %d done!\n", t->cred->user->uid);
+-    }
+-
+-    /* Recalculate timeslice per user and set the sceduler */
+-    fssp_calc_ts_per_user();
+-    sched_setscheduler(pid, SCHED_NORMAL, &s);
+-  }
+-
+-  return 1;
+-}
+-
+-asmlinkage long sys_profile_fssp(int status) {
+-  if (status != 0 && status != 1)
+-    return -1;
+-  fssp_profile = status;
+-  return 1;
+-}
+-
+-
+-
